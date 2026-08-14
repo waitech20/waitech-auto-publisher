@@ -1,8 +1,7 @@
-
 const { withRetry } = require("./retry");
 
 const MYMEMORY_URL = "https://api.mymemory.translated.net/get";
-const MYMEMORY_EMAIL = process.env.ananiaybina@gmail.com || "";
+const MYMEMORY_EMAIL = process.env.MYMEMORY_EMAIL || "";
 
 /**
  * Translates text via the free MyMemory API.
