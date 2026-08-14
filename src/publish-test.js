@@ -51,7 +51,7 @@ async function main() {
     return;
   }
 
-  const caption = createCaption(post);
+  const caption = await createCaption(post);
 
   console.log("");
   console.log("📱 FACEBOOK CAPTION");
