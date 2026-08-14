@@ -80,7 +80,7 @@ async function main() {
     let caption;
 
     try {
-      caption = createCaption(post);
+      caption = await createCaption(post);
 
       if (typeof caption !== "string") {
         caption =
