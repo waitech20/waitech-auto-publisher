@@ -27,7 +27,7 @@ async function main() {
     return;
   }
 
-  const caption = createCaption(post);
+  const caption = await createCaption(post);
 
   const input = buildCreatePostInput({
     channelId: CHANNEL_ID,
