@@ -16,6 +16,14 @@ const BLOGGER_RSS =
   process.env.BLOGGER_RSS ||
   "https://waitechsolution.blogspot.com/feeds/posts/default?alt=rss";
 
+/**
+ * Extract feature image using the original verified fallback order:
+ *
+ * 1. media:content
+ * 2. media:thumbnail
+ * 3. enclosure
+ * 4. first <img> inside article HTML
+ */
 function extractImage(post) {
   if (post.mediaContent) {
     const media = Array.isArray(post.mediaContent)
@@ -66,15 +74,36 @@ function extractImage(post) {
   return null;
 }
 
+/**
+ * Convert HTML / encoded content into clean readable text.
+ */
 function cleanText(text) {
   if (!text) return "";
 
-  return text
+  return String(text)
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
     .replace(/\s+/g, " ")
     .trim();
 }
 
+/**
+ * Create a professional Facebook-ready article description.
+ *
+ * Target:
+ * - Minimum useful length: ~300 characters when source content allows
+ * - Target length: ~450 characters
+ * - Maximum: 500 characters
+ * - Never intentionally cuts a word in half
+ */
 function createExcerpt(post) {
   const text = cleanText(
     post.contentSnippet ||
@@ -83,11 +112,31 @@ function createExcerpt(post) {
     ""
   );
 
-  if (text.length <= 220) {
+  if (!text) {
+    return "";
+  }
+
+  // If the article is already short, return the complete text.
+  if (text.length <= 500) {
     return text;
   }
 
-  return text.substring(0, 220).trim() + "...";
+  // Target a professional medium-length Facebook description.
+  const targetLength = 450;
+
+  let excerpt = text.substring(0, targetLength);
+
+  // Avoid cutting a word in half.
+  const lastSpace = excerpt.lastIndexOf(" ");
+
+  if (lastSpace > 300) {
+    excerpt = excerpt.substring(0, lastSpace);
+  }
+
+  excerpt = excerpt.trim();
+
+  // Add a clean ellipsis when the original article continues.
+  return `${excerpt}...`;
 }
 
 async function getLatestPost() {
@@ -102,7 +151,10 @@ async function getLatestPost() {
 
     const feed = await withRetry(
       () => parser.parseURL(BLOGGER_RSS),
-      { retries: 2, baseDelayMs: 1500 }
+      {
+        retries: 2,
+        baseDelayMs: 1500
+      }
     );
 
     if (!feed.items || feed.items.length === 0) {
@@ -122,12 +174,15 @@ async function getLatestPost() {
     console.log("✅ NEWEST BLOGGER POST");
     console.log("---------------------------------");
     console.log("");
+
     console.log("📝 TITLE:");
     console.log(title);
     console.log("");
+
     console.log("🔗 URL:");
     console.log(url);
     console.log("");
+
     console.log("🖼️ FEATURE IMAGE:");
 
     if (image) {
@@ -137,12 +192,20 @@ async function getLatestPost() {
     }
 
     console.log("");
+
     console.log("📄 EXCERPT:");
     console.log(excerpt);
+
     console.log("");
+    console.log("📏 EXCERPT LENGTH:");
+    console.log(`${excerpt.length} characters`);
+
+    console.log("");
+
     console.log("📅 PUBLISHED:");
     console.log(published);
     console.log("");
+
     console.log("---------------------------------");
 
     if (image) {
