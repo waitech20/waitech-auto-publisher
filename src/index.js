@@ -5,7 +5,8 @@ const { createCaption } = require("./caption");
 const {
   ensureDatabase,
   getPublicationDecision,
-  markAsPublished
+  markAsPublished,
+  getPublishedPosts
 } = require("./database");
 const { createBufferPost } = require("./bufferClient");
 const { acquireLock, releaseLock } = require("./lock");
@@ -61,8 +62,9 @@ async function main() {
     }
 
     console.log("");
-   console.log("Checking publication history...");
+    console.log("Checking publication history...");
     console.log("Post ID (from Blogger):", JSON.stringify(post.id));
+    console.log("Database currently contains:", JSON.stringify(getPublishedPosts()));
 
     const decision = getPublicationDecision(post.id, post.published);
 
