@@ -40,6 +40,7 @@ jobs:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           BUFFER_CHANNEL_ID: ${{ secrets.BUFFER_CHANNEL_ID }}
           BLOGGER_RSS: ${{ secrets.BLOGGER_RSS }}
+          MYMEMORY_EMAIL: ${{ secrets.MYMEMORY_EMAIL }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: node src/index.js
 
