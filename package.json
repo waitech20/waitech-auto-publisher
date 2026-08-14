@@ -1,0 +1,20 @@
+{
+  "name": "waitech-auto-publisher",
+  "version": "2.0.0",
+  "description": "WaiTech Blogger to Buffer/Facebook automatic publisher — cloud-ready, device-independent",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "scheduler": "node scheduler.js",
+    "test:schema": "node src/buffer-schema-test.js",
+    "test:integration": "node src/publish-test.js",
+    "health": "node src/health-check.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "rss-parser": "^3.13.0"
+  }
+}

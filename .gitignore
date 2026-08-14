@@ -1,0 +1,19 @@
+# Secrets — NEVER commit
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+
+# Runtime artifacts (not real data — safe to regenerate)
+data/publisher.lock
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
