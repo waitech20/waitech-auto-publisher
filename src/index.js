@@ -61,7 +61,8 @@ async function main() {
     }
 
     console.log("");
-    console.log("Checking publication history...");
+   console.log("Checking publication history...");
+    console.log("Post ID (from Blogger):", JSON.stringify(post.id));
 
     const decision = getPublicationDecision(post.id, post.published);
 
