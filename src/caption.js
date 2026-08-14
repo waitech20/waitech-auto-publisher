@@ -1,3 +1,5 @@
+const { translateText } = require("./translate");
+
 function cleanText(text) {
   if (!text) return "";
 
@@ -11,7 +13,7 @@ function cleanText(text) {
     .trim();
 }
 
-function createCaption(post) {
+async function createCaption(post) {
   const title = cleanText(post.title || "New Article");
   const url = post.url || "";
   const excerpt = cleanText(post.excerpt || "");
@@ -22,7 +24,19 @@ function createCaption(post) {
     caption += `${excerpt}\n\n`;
   }
 
-  caption += `👉 Read the full article:\n${url}\n\n`;
+  const titleSw = await translateText(title, { to: "sw" });
+  const excerptSw = excerpt ? await translateText(excerpt, { to: "sw" }) : null;
+
+  if (titleSw || excerptSw) {
+    caption += `———————————\n\n`;
+    caption += `🔥 ${titleSw || title}\n\n`;
+
+    if (excerptSw || excerpt) {
+      caption += `${excerptSw || excerpt}\n\n`;
+    }
+  }
+
+  caption += `👉 Read the full article / Soma makala kamili:\n${url}\n\n`;
 
   caption += `#WaiTech #Technology #TechNews #DigitalTips`;
 
