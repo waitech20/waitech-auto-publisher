@@ -1,8 +1,12 @@
 function cleanText(text) {
   if (!text) return "";
 
-  return text
+  return String(text)
     .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -26,5 +30,6 @@ function createCaption(post) {
 }
 
 module.exports = {
-  createCaption
+  createCaption,
+  cleanText
 };
