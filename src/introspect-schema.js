@@ -41,6 +41,9 @@ const INTROSPECT_TYPE_QUERY = `
       enumValues {
         name
       }
+      possibleTypes {
+        name
+      }
     }
   }
 `;
@@ -104,6 +107,10 @@ async function introspect(typeName) {
     console.log("values:", type.enumValues.map((v) => v.name).join(", "));
   }
 
+  if (type.possibleTypes) {
+    console.log("possibleTypes:", type.possibleTypes.map((t) => t.name).join(", "));
+  }
+
   console.log("");
 }
 
@@ -123,8 +130,8 @@ async function main() {
   await introspect("InstagramPostMetadataInput");
   await introspect("PinterestPostMetadataInput");
   await introspect("PostType");
-  await introspect("Channel");
-  await introspect("PinterestBoard");
+  await introspect("ChannelMetadata");
+  await introspect("PinterestChannelMetadata");
 
   console.log("🟢 Done.");
 }
