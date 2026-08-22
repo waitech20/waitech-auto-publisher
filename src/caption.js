@@ -13,10 +13,26 @@ function cleanText(text) {
     .trim();
 }
 
-async function createCaption(post) {
+async function getBilingualParts(post) {
   const title = cleanText(post.title || "New Article");
-  const url = post.url || "";
   const excerpt = cleanText(post.excerpt || "");
+
+  const titleSw = await translateText(title, { to: "sw" });
+  const excerptSw = excerpt ? await translateText(excerpt, { to: "sw" }) : null;
+
+  return {
+    title,
+    excerpt,
+    titleSw: titleSw || title,
+    excerptSw: excerptSw || excerpt
+  };
+}
+
+// Facebook: full bilingual caption with a clickable link (unchanged from
+// the original verified version).
+async function createCaption(post) {
+  const url = post.url || "";
+  const { title, excerpt, titleSw, excerptSw } = await getBilingualParts(post);
 
   let caption = `🔥 ${title}\n\n`;
 
@@ -24,15 +40,12 @@ async function createCaption(post) {
     caption += `${excerpt}\n\n`;
   }
 
-  const titleSw = await translateText(title, { to: "sw" });
-  const excerptSw = excerpt ? await translateText(excerpt, { to: "sw" }) : null;
-
-  if (titleSw || excerptSw) {
+  if (titleSw !== title || excerptSw !== excerpt) {
     caption += `———————————\n\n`;
-    caption += `🔥 ${titleSw || title}\n\n`;
+    caption += `🔥 ${titleSw}\n\n`;
 
-    if (excerptSw || excerpt) {
-      caption += `${excerptSw || excerpt}\n\n`;
+    if (excerptSw) {
+      caption += `${excerptSw}\n\n`;
     }
   }
 
@@ -43,7 +56,54 @@ async function createCaption(post) {
   return caption;
 }
 
+// Instagram: same bilingual content, but links in captions are NOT
+// clickable on Instagram, so we point people to the bio instead of
+// showing a URL that looks clickable but isn't.
+async function createInstagramCaption(post) {
+  const { title, excerpt, titleSw, excerptSw } = await getBilingualParts(post);
+
+  let caption = `🔥 ${title}\n\n`;
+
+  if (excerpt) {
+    caption += `${excerpt}\n\n`;
+  }
+
+  if (titleSw !== title || excerptSw !== excerpt) {
+    caption += `———————————\n\n`;
+    caption += `🔥 ${titleSw}\n\n`;
+
+    if (excerptSw) {
+      caption += `${excerptSw}\n\n`;
+    }
+  }
+
+  caption += `🔗 Link in bio / Link iko kwenye bio\n\n`;
+
+  caption += `#WaiTech #Technology #TechNews #DigitalTips`;
+
+  return caption;
+}
+
+// Pinterest: short bilingual description. The destination link and title
+// are sent as separate structured fields (see bufferClient.js), not part
+// of this text, so no URL is repeated here.
+async function createPinterestDescription(post) {
+  const { excerpt, excerptSw } = await getBilingualParts(post);
+
+  let description = excerpt || "";
+
+  if (excerptSw && excerptSw !== excerpt) {
+    description += ` — ${excerptSw}`;
+  }
+
+  description += ` #WaiTech #Technology`;
+
+  return description;
+}
+
 module.exports = {
   createCaption,
+  createInstagramCaption,
+  createPinterestDescription,
   cleanText
 };
