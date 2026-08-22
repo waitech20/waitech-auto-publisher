@@ -28,6 +28,16 @@ const CHANNELS_QUERY = `
       service
       displayName
       isDisconnected
+      metadata {
+        ... on PinterestMetadata {
+          boards {
+            id
+            name
+            serviceId
+            url
+          }
+        }
+      }
     }
   }
 `;
@@ -96,6 +106,14 @@ async function main() {
         console.log(`Name:     ${ch.displayName || ch.name}`);
         console.log(`ID:       ${ch.id}`);
         console.log(`Status:   ${ch.isDisconnected ? "DISCONNECTED" : "connected"}`);
+
+        if (ch.service === "pinterest" && ch.metadata && ch.metadata.boards) {
+          console.log("Boards:");
+          ch.metadata.boards.forEach((board) => {
+            console.log(`  - ${board.name}  (id: ${board.id})`);
+          });
+        }
+
         console.log("---------------------------------");
       });
     }
