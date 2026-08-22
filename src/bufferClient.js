@@ -23,9 +23,11 @@ const CREATE_POST_MUTATION =
 
 /**
  * Builds the CreatePostInput object using the exact verified shape:
- * shareNow / automatic / metadata.facebook.type = "post" / image asset.
+ * shareNow / automatic / image asset. metadata defaults to the original
+ * verified Facebook shape when not provided, so existing callers are
+ * unaffected.
  */
-function buildCreatePostInput({ channelId, text, imageUrl }) {
+function buildCreatePostInput({ channelId, text, imageUrl, metadata }) {
   return {
     channelId,
     text,
@@ -34,7 +36,7 @@ function buildCreatePostInput({ channelId, text, imageUrl }) {
     schedulingType: "automatic",
     saveToDraft: false,
     needsApproval: false,
-    metadata: {
+    metadata: metadata || {
       facebook: {
         type: "post"
       }
@@ -52,8 +54,8 @@ function buildCreatePostInput({ channelId, text, imageUrl }) {
  * and retrying after an ambiguous "maybe it posted" state risks a
  * duplicate Facebook post.
  */
-async function createBufferPost({ token, channelId, text, imageUrl, dryRun = false }) {
-  const input = buildCreatePostInput({ channelId, text, imageUrl });
+async function createBufferPost({ token, channelId, text, imageUrl, metadata, dryRun = false }) {
+  const input = buildCreatePostInput({ channelId, text, imageUrl, metadata });
 
   if (dryRun) {
     console.log("🧪 DRY_RUN active — Buffer request NOT sent.");
