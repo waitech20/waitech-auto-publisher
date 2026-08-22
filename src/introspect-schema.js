@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const TOKEN = process.env.BUFFER_ACCESS_TOKEN;
@@ -13,6 +12,17 @@ const INTROSPECT_TYPE_QUERY = `
     __type(name: $name) {
       name
       kind
+      fields {
+        name
+        type {
+          name
+          kind
+          ofType {
+            name
+            kind
+          }
+        }
+      }
       inputFields {
         name
         type {
@@ -82,6 +92,10 @@ async function introspect(typeName) {
 
   console.log("kind:", type.kind);
 
+  if (type.fields) {
+    type.fields.forEach((f) => console.log(describeField(f)));
+  }
+
   if (type.inputFields) {
     type.inputFields.forEach((f) => console.log(describeField(f)));
   }
@@ -108,8 +122,9 @@ async function main() {
   await introspect("PostInputMetaData");
   await introspect("InstagramPostMetadataInput");
   await introspect("PinterestPostMetadataInput");
-  await introspect("PostTypeInstagram");
-  await introspect("PinterestBoardId");
+  await introspect("PostType");
+  await introspect("Channel");
+  await introspect("PinterestBoard");
 
   console.log("🟢 Done.");
 }
