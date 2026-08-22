@@ -104,3 +104,40 @@ async function introspect(typeName) {
   }
 
   if (type.enumValues) {
+    console.log("values:", type.enumValues.map((v) => v.name).join(", "));
+  }
+
+  if (type.possibleTypes) {
+    console.log("possibleTypes:", type.possibleTypes.map((t) => t.name).join(", "));
+  }
+
+  console.log("");
+}
+
+async function main() {
+  console.log("");
+  console.log("=================================");
+  console.log("WaiTech BUFFER SCHEMA INTROSPECTION (read-only)");
+  console.log("=================================");
+  console.log("");
+
+  if (!TOKEN) {
+    console.log("❌ BUFFER_ACCESS_TOKEN missing.");
+    return;
+  }
+
+  await introspect("PostInputMetaData");
+  await introspect("InstagramPostMetadataInput");
+  await introspect("PinterestPostMetadataInput");
+  await introspect("PostType");
+  await introspect("PinterestMetadata");
+  await introspect("InstagramMetadata");
+
+  console.log("🟢 Done.");
+}
+
+main().catch((error) => {
+  console.log("");
+  console.log("FATAL ERROR:");
+  console.log(error.message);
+});
