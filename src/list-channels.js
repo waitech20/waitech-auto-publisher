@@ -21,8 +21,8 @@ const ACCOUNT_QUERY = `
 `;
 
 const CHANNELS_QUERY = `
-  query GetChannels($organizationId: OrganizationId!) {
-    channels(organizationId: $organizationId) {
+  query GetChannels($input: ChannelsInput!) {
+    channels(input: $input) {
       id
       name
       service
@@ -77,7 +77,7 @@ async function main() {
     console.log("---------------------------------");
 
     const channelsResult = await callBuffer(CHANNELS_QUERY, {
-      organizationId: org.id
+      input: { organizationId: org.id }
     });
 
     if (channelsResult.errors) {
