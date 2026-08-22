@@ -1,25 +1,65 @@
 require("dotenv").config();
 
 const { getLatestPost } = require("./blogger");
-const { createCaption } = require("./caption");
 const {
   ensureDatabase,
   getPublicationDecision,
-  markAsPublished,
-  getPublishedPosts
+  markAsPublished
 } = require("./database");
 const { createBufferPost } = require("./bufferClient");
 const { acquireLock, releaseLock } = require("./lock");
+const { CHANNELS } = require("./channels");
 
 const TOKEN = process.env.BUFFER_ACCESS_TOKEN;
-const CHANNEL_ID =
-  process.env.BUFFER_CHANNEL_ID ||
-  "6a7de7afb2d9d577436e52b5";
 
 // Set DRY_RUN=true to run the full pipeline without sending anything to
 // Buffer and without writing to the publication database. Defaults to
 // false so production behavior is unchanged from the verified baseline.
 const DRY_RUN = String(process.env.DRY_RUN).toLowerCase() === "true";
+
+async function publishToChannel(channel, post) {
+  console.log("");
+  console.log(`--- ${channel.service.toUpperCase()} ---`);
+
+  let text;
+
+  try {
+    text = await channel.buildText(post);
+  } catch (error) {
+    console.log(`Caption generator failed for ${channel.service}.`);
+    console.log(error.message);
+    return { service: channel.service, success: false, message: error.message };
+  }
+
+  const metadata = channel.buildMetadata(post);
+
+  const result = await createBufferPost({
+    token: TOKEN,
+    channelId: channel.channelId,
+    text,
+    imageUrl: post.image,
+    metadata,
+    dryRun: DRY_RUN
+  });
+
+  if (!result.success) {
+    console.log(`${channel.service.toUpperCase()} PUBLISH FAILED`);
+
+    if (result.errors) {
+      console.log(JSON.stringify(result.errors, null, 2));
+    } else {
+      console.log(result.message);
+    }
+
+    return { service: channel.service, success: false, ...result };
+  }
+
+  console.log(DRY_RUN ? "DRY_RUN COMPLETE (nothing published)" : `${channel.service.toUpperCase()} POST CREATED`);
+  console.log("Post ID:", result.postId);
+  console.log("Status:", result.status);
+
+  return { service: channel.service, success: true, ...result };
+}
 
 async function main() {
   console.log("");
@@ -63,8 +103,6 @@ async function main() {
 
     console.log("");
     console.log("Checking publication history...");
-    console.log("Post ID (from Blogger):", JSON.stringify(post.id));
-    console.log("Database currently contains:", JSON.stringify(getPublishedPosts()));
 
     const decision = getPublicationDecision(post.id, post.published);
 
@@ -80,78 +118,42 @@ async function main() {
       console.log("NEW POST DETECTED.");
     }
 
-    let caption;
+    console.log("");
+    console.log("Feature Image:", post.image ? "YES" : "NO");
+    console.log("Publishing to", CHANNELS.length, "channel(s)...");
 
-    try {
-      caption = await createCaption(post);
+    const results = [];
 
-      if (typeof caption !== "string") {
-        caption =
-          "🔥 " +
-          post.title +
-          "\n\n" +
-          post.excerpt +
-          "\n\n" +
-          "Read the full article:\n" +
-          post.url +
-          "\n\n" +
-          "#WaiTech #Technology #TechNews #DigitalTips";
-      }
-    } catch (error) {
-      console.log("Caption generator failed.");
-      console.log(error.message);
-      return;
+    for (const channel of CHANNELS) {
+      const result = await publishToChannel(channel, post);
+      results.push(result);
     }
 
-    console.log("");
-    console.log("Sending to Buffer...");
+    const facebookResult = results.find((r) => r.service === "facebook");
+    const criticalSucceeded = facebookResult && facebookResult.success;
 
-    const result = await createBufferPost({
-      token: TOKEN,
-      channelId: CHANNEL_ID,
-      text: caption,
-      imageUrl: post.image,
-      dryRun: DRY_RUN
+    console.log("");
+    console.log("=================================");
+    console.log("SUMMARY");
+    console.log("=================================");
+    results.forEach((r) => {
+      console.log(`${r.service}: ${r.success ? "OK" : "FAILED"}`);
     });
 
-    if (!result.success) {
-      console.log("");
-      console.log("BUFFER PUBLISH FAILED");
-
-      if (result.errors) {
-        console.log(
-          JSON.stringify(result.errors, null, 2)
-        );
-      } else {
-        console.log(result.message);
-      }
-
-      return;
-    }
-
-    console.log("");
-    console.log("=================================");
-    console.log(DRY_RUN ? "DRY_RUN COMPLETE (nothing published)" : "FACEBOOK POST CREATED");
-    console.log("=================================");
-    console.log("Post ID:", result.postId);
-    console.log("Status:", result.status);
-    console.log("Facebook Type: post");
-    console.log(
-      "Feature Image:",
-      post.image ? "YES" : "NO"
-    );
-
-    if (!DRY_RUN) {
+    if (!DRY_RUN && criticalSucceeded) {
       markAsPublished(post.id, {
         title: post.title,
         url: post.url,
-        bufferPostId: result.postId,
+        bufferPostId: facebookResult.postId,
         publishedAt: new Date().toISOString(),
         sourcePublishedAt: post.published
       });
 
       console.log("");
       console.log("Publication saved.");
+    } else if (!DRY_RUN && !criticalSucceeded) {
+      console.log("");
+      console.log("⚠️ Facebook publish failed — NOT marking as published, will retry next cycle.");
     }
 
     console.log("AUTO PUBLISHER COMPLETED.");
