@@ -105,10 +105,18 @@ function cleanText(text) {
  * - Never intentionally cuts a word in half
  */
 function createExcerpt(post) {
+  // IMPORTANT: prioritize the raw HTML fields (contentEncoded/content).
+  // rss-parser's own "contentSnippet" is pre-stripped of HTML tags —
+  // including the <style> and <script> wrapper tags — which means by
+  // the time it reaches us, any CSS/JS text they contained has already
+  // leaked through as if it were plain article text, with no tags left
+  // for our own cleanText() stripping to catch. Running cleanText() on
+  // the raw HTML first lets it properly remove whole <style>/<script>
+  // blocks (tag + content) before anything is exposed as an excerpt.
   const text = cleanText(
-    post.contentSnippet ||
-    post.content ||
     post.contentEncoded ||
+    post.content ||
+    post.contentSnippet ||
     ""
   );
 
