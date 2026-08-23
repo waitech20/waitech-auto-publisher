@@ -1,0 +1,27 @@
+name: WaiTech List All Blogger Posts
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  list-posts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: List all Blogger posts
+        env:
+          BLOGGER_RSS: ${{ secrets.BLOGGER_RSS }}
+        run: node src/list-all-posts.js
