@@ -4,7 +4,7 @@ const { getLatestPost } = require("./blogger");
 const {
   ensureDatabase,
   getPublicationDecision,
-  markAsPublished
+  recordChannelResult
 } = require("./database");
 const { createBufferPost } = require("./bufferClient");
 const { acquireLock, releaseLock } = require("./lock");
@@ -54,7 +54,11 @@ async function publishToChannel(channel, post) {
     return { service: channel.service, success: false, ...result };
   }
 
-  console.log(DRY_RUN ? "DRY_RUN COMPLETE (nothing published)" : `${channel.service.toUpperCase()} POST CREATED`);
+  console.log(
+    DRY_RUN
+      ? "DRY_RUN COMPLETE (nothing published)"
+      : `${channel.service.toUpperCase()} POST CREATED`
+  );
   console.log("Post ID:", result.postId);
   console.log("Status:", result.status);
 
@@ -104,7 +108,8 @@ async function main() {
     console.log("");
     console.log("Checking publication history...");
 
-    const decision = getPublicationDecision(post.id, post.published);
+    const channelServices = CHANNELS.map((c) => c.service);
+    const decision = getPublicationDecision(post.id, post.published, channelServices);
 
     if (decision.action === "SKIP") {
       console.log("POST ALREADY PUBLISHED.");
@@ -114,23 +119,49 @@ async function main() {
 
     if (decision.reason === "republish-detected") {
       console.log("REPUBLISH DETECTED (Blogger publish date changed).");
+    } else if (decision.reason === "partial-retry") {
+      console.log("PARTIAL RETRY — some channels already succeeded, retrying the rest only.");
     } else {
       console.log("NEW POST DETECTED.");
     }
 
+    const channelsToAttempt = CHANNELS.filter((c) =>
+      decision.channelsToAttempt.includes(c.service)
+    );
+
     console.log("");
     console.log("Feature Image:", post.image ? "YES" : "NO");
-    console.log("Publishing to", CHANNELS.length, "channel(s)...");
+    console.log(
+      "Attempting",
+      channelsToAttempt.length,
+      "of",
+      CHANNELS.length,
+      "channel(s):",
+      channelsToAttempt.map((c) => c.service).join(", ")
+    );
 
     const results = [];
 
-    for (const channel of CHANNELS) {
+    for (const channel of channelsToAttempt) {
       const result = await publishToChannel(channel, post);
       results.push(result);
-    }
 
-    const facebookResult = results.find((r) => r.service === "facebook");
-    const criticalSucceeded = facebookResult && facebookResult.success;
+      // Record each channel's outcome immediately, one at a time, so a
+      // channel that just succeeded is never lost even if a later
+      // channel in this same run fails or the process is interrupted.
+      if (!DRY_RUN) {
+        recordChannelResult(
+          post.id,
+          {
+            title: post.title,
+            url: post.url,
+            sourcePublishedAt: post.published
+          },
+          channel.service,
+          result
+        );
+      }
+    }
 
     console.log("");
     console.log("=================================");
@@ -140,20 +171,9 @@ async function main() {
       console.log(`${r.service}: ${r.success ? "OK" : "FAILED"}`);
     });
 
-    if (!DRY_RUN && criticalSucceeded) {
-      markAsPublished(post.id, {
-        title: post.title,
-        url: post.url,
-        bufferPostId: facebookResult.postId,
-        publishedAt: new Date().toISOString(),
-        sourcePublishedAt: post.published
-      });
-
+    if (!DRY_RUN) {
       console.log("");
-      console.log("Publication saved.");
-    } else if (!DRY_RUN && !criticalSucceeded) {
-      console.log("");
-      console.log("⚠️ Facebook publish failed — NOT marking as published, will retry next cycle.");
+      console.log("Publication record updated.");
     }
 
     console.log("AUTO PUBLISHER COMPLETED.");

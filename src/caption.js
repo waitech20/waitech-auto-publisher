@@ -84,21 +84,31 @@ async function createInstagramCaption(post) {
   return caption;
 }
 
-// Pinterest: short bilingual description. The destination link and title
-// are sent as separate structured fields (see bufferClient.js), not part
-// of this text, so no URL is repeated here.
+// Pinterest: short, ENGLISH-ONLY description, hard-capped well under
+// Pinterest's 500-character limit. The destination link and title are
+// sent as separate structured fields (see channels.js), not part of
+// this text. (Bilingual text was tried but the combined English+Swahili
+// excerpt routinely exceeded 500 characters and Pinterest rejected the
+// post outright — a single language, safely truncated, is reliable.)
 async function createPinterestDescription(post) {
-  const { excerpt, excerptSw } = await getBilingualParts(post);
+  const excerpt = cleanText(post.excerpt || "");
+  const hashtags = " #WaiTech #Technology";
+  const maxDescLength = 500 - hashtags.length - 3 - 10; // extra safety margin
 
-  let description = excerpt || "";
+  let description = excerpt;
 
-  if (excerptSw && excerptSw !== excerpt) {
-    description += ` — ${excerptSw}`;
+  if (description.length > maxDescLength) {
+    description = description.substring(0, maxDescLength);
+    const lastSpace = description.lastIndexOf(" ");
+
+    if (lastSpace > 50) {
+      description = description.substring(0, lastSpace);
+    }
+
+    description = description.trim() + "...";
   }
 
-  description += ` #WaiTech #Technology`;
-
-  return description;
+  return description + hashtags;
 }
 
 module.exports = {

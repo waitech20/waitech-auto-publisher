@@ -24,6 +24,24 @@ const BLOGGER_RSS =
  * 3. enclosure
  * 4. first <img> inside article HTML
  */
+/**
+ * Blogger/Google-hosted images encode a size directly in the URL path,
+ * e.g. ".../s72-c/image.jpg" is a 72x72 cropped thumbnail — this is
+ * where the "blurry" feature image comes from when media:thumbnail
+ * (rather than a full-size media:content) is what the feed provided.
+ * Rewriting the size segment to a much larger value fixes this without
+ * needing a different image entirely.
+ */
+function upgradeImageQuality(url) {
+  if (!url) return url;
+
+  if (/googleusercontent\.com/i.test(url) || /bp\.blogspot\.com/i.test(url)) {
+    return url.replace(/\/s\d+(-c)?\//, "/s1600/");
+  }
+
+  return url;
+}
+
 function extractImage(post) {
   if (post.mediaContent) {
     const media = Array.isArray(post.mediaContent)
@@ -174,7 +192,7 @@ async function getLatestPost() {
 
     const title = post.title || "Untitled";
     const url = post.link || "";
-    const image = extractImage(post);
+    const image = upgradeImageQuality(extractImage(post));
     const excerpt = createExcerpt(post);
     const published = post.pubDate || post.isoDate || "";
     const id = post.guid || post.id || url;
@@ -246,6 +264,7 @@ async function getLatestPost() {
 module.exports = {
   getLatestPost,
   extractImage,
+  upgradeImageQuality,
   cleanText,
   createExcerpt
 };

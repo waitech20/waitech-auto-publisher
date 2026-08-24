@@ -49,8 +49,8 @@ function readDatabase() {
 }
 
 function entryId(entry) {
-  // Supports legacy entries (plain string id) and new entries
-  // (record object with an "id" field).
+  // Supports legacy entries (plain string id) and record objects
+  // (both the old single-channel shape and the new per-channel shape).
   return typeof entry === "string" ? entry : entry && entry.id;
 }
 
@@ -66,8 +66,118 @@ function isPublished(id) {
   return findRecord(id) !== null;
 }
 
-function markAsPublished(id, metadata) {
-  if (!id) return;
+/**
+ * Normalizes any stored record shape into a { [service]: { success, ... } }
+ * map, without mutating the stored data:
+ *
+ * - legacy plain string id (oldest data)      -> null (no per-channel info)
+ * - old single-channel shape (bufferPostId at
+ *   the top level, from before multi-channel
+ *   support existed)                          -> { facebook: { success: true, ... } }
+ * - new shape (an explicit "channels" object) -> used as-is
+ */
+function normalizeChannels(record) {
+  if (!record || typeof record === "string") {
+    return null;
+  }
+
+  if (record.channels) {
+    return record.channels;
+  }
+
+  if (record.bufferPostId) {
+    return {
+      facebook: {
+        success: true,
+        postId: record.bufferPostId,
+        publishedAt: record.publishedAt
+      }
+    };
+  }
+
+  return {};
+}
+
+function getPublishedPosts() {
+  const database = readDatabase();
+
+  return database.published;
+}
+
+/**
+ * Publication / per-channel retry decision.
+ *
+ * - No record for this post id yet             -> PUBLISH all channels ("new-post")
+ * - Record is a legacy plain string             -> SKIP entirely ("already-published")
+ *   (no per-channel info exists for very old data — preserve original
+ *   behavior exactly rather than guessing)
+ * - Record exists, Blogger's pubDate CHANGED
+ *   since we last saw it                        -> PUBLISH all channels again
+ *   ("republish-detected" — this is the explicit, intentional signal)
+ * - Record exists, pubDate UNCHANGED             -> PUBLISH only the channels
+ *   that have not yet succeeded ("partial-retry"); if every channel has
+ *   already succeeded, SKIP entirely ("already-published")
+ *
+ * This is what prevents a channel that already succeeded (e.g. Instagram)
+ * from being re-attempted just because a different channel (e.g. Pinterest)
+ * failed and needs a retry on the next cycle.
+ */
+function getPublicationDecision(id, sourcePublishedAt, channelServices) {
+  if (!id) {
+    return { action: "SKIP", reason: "missing-id", channelsToAttempt: [] };
+  }
+
+  const services = channelServices || [];
+  const record = findRecord(id);
+
+  if (!record) {
+    return { action: "PUBLISH", reason: "new-post", channelsToAttempt: services.slice() };
+  }
+
+  if (typeof record === "string") {
+    return { action: "SKIP", reason: "already-published", channelsToAttempt: [] };
+  }
+
+  const isRepublish =
+    record.sourcePublishedAt && record.sourcePublishedAt !== sourcePublishedAt;
+
+  if (isRepublish) {
+    return {
+      action: "PUBLISH",
+      reason: "republish-detected",
+      channelsToAttempt: services.slice(),
+      record
+    };
+  }
+
+  const channels = normalizeChannels(record) || {};
+
+  const channelsToAttempt = services.filter((service) => {
+    const status = channels[service];
+    return !status || !status.success;
+  });
+
+  if (channelsToAttempt.length === 0) {
+    return { action: "SKIP", reason: "already-published", record };
+  }
+
+  return {
+    action: "PUBLISH",
+    reason: "partial-retry",
+    channelsToAttempt,
+    record
+  };
+}
+
+/**
+ * Records the outcome of attempting ONE channel for a post. Safe to call
+ * once per channel, immediately after each attempt — merges with any
+ * previously recorded channel results instead of overwriting them, so a
+ * channel that already succeeded is never forgotten just because a
+ * different channel was retried afterward.
+ */
+function recordChannelResult(id, meta, service, result) {
+  if (!id || !service) return;
 
   const database = readDatabase();
 
@@ -75,14 +185,33 @@ function markAsPublished(id, metadata) {
     (entry) => entryId(entry) === id
   );
 
-  const record = metadata ? { id, ...metadata } : id;
+  const existing = existingIndex === -1 ? null : database.published[existingIndex];
+
+  const record = {
+    id,
+    title: (meta && meta.title) || (existing && existing.title) || "",
+    url: (meta && meta.url) || (existing && existing.url) || "",
+    sourcePublishedAt: (meta && meta.sourcePublishedAt) || (existing && existing.sourcePublishedAt) || "",
+    channels: normalizeChannels(existing) || {}
+  };
+
+  record.channels[service] = result.success
+    ? {
+        success: true,
+        postId: result.postId || null,
+        publishedAt: new Date().toISOString()
+      }
+    : {
+        success: false,
+        lastError:
+          result.message ||
+          (result.errors ? JSON.stringify(result.errors) : "unknown error"),
+        lastAttemptAt: new Date().toISOString()
+      };
 
   if (existingIndex === -1) {
     database.published.push(record);
   } else {
-    // Update in place — used when an intentional republish refreshes
-    // sourcePublishedAt / bufferPostId / publishedAt for an id that was
-    // already published before.
     database.published[existingIndex] = record;
   }
 
@@ -93,59 +222,11 @@ function markAsPublished(id, metadata) {
   );
 }
 
-function getPublishedPosts() {
-  const database = readDatabase();
-
-  return database.published;
-}
-
-/**
- * Publication identity / republish strategy.
- *
- * - No record for this post id yet            -> PUBLISH ("new-post")
- * - Record exists but is a legacy plain string
- *   (no stored source timestamp)               -> SKIP ("already-published")
- *   We have no reliable prior timestamp to compare against for old data,
- *   so we preserve the original duplicate-protection behavior exactly.
- * - Record exists with a stored sourcePublishedAt,
- *   and Blogger's own pubDate for this post is
- *   unchanged since we last published it        -> SKIP ("already-published")
- *   This is what makes routine 5-minute polling safe: pubDate does not
- *   change just because the scheduler re-checks the feed.
- * - Record exists with a stored sourcePublishedAt,
- *   and Blogger's own pubDate for this post HAS
- *   changed since we last published it           -> PUBLISH ("republish-detected")
- *   This only happens when the post is intentionally republished/updated
- *   on Blogger's side (Blogger bumping the publish date is the explicit
- *   republish signal), never from ordinary polling.
- */
-function getPublicationDecision(id, sourcePublishedAt) {
-  if (!id) {
-    return { action: "SKIP", reason: "missing-id" };
-  }
-
-  const record = findRecord(id);
-
-  if (!record) {
-    return { action: "PUBLISH", reason: "new-post" };
-  }
-
-  if (typeof record === "string" || !record.sourcePublishedAt) {
-    return { action: "SKIP", reason: "already-published", record };
-  }
-
-  if (record.sourcePublishedAt !== sourcePublishedAt) {
-    return { action: "PUBLISH", reason: "republish-detected", record };
-  }
-
-  return { action: "SKIP", reason: "already-published", record };
-}
-
 module.exports = {
   ensureDatabase,
   readDatabase,
   isPublished,
-  markAsPublished,
   getPublishedPosts,
-  getPublicationDecision
+  getPublicationDecision,
+  recordChannelResult
 };
