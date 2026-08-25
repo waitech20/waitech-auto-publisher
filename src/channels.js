@@ -5,7 +5,7 @@ const {
 } = require("./caption");
 
 const PINTEREST_BOARD_ID =
-  process.env.PINTEREST_BOARD_ID || "6a7eb38189873b64c5033bca"; // "WaiTech Solution" board
+  process.env.PINTEREST_BOARD_ID || "779404347952599517"; // "WaiTech Solution" board (serviceId, not Buffer's internal id)
 
 const CHANNELS = [
   {
