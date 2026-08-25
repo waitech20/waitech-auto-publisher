@@ -27,8 +27,6 @@
       "channels": {
         "facebook": {
           "success": true,
-
-          
           "postId": "6a8bdb477b646aa28b064063",
           "publishedAt": "2026-08-24T05:49:13.119Z"
         },
@@ -38,9 +36,9 @@
           "publishedAt": "2026-08-23T05:30:00.000Z"
         },
         "pinterest": {
-          "success": false,
-          "lastError": "Failed to create post: Board not found",
-          "lastAttemptAt": "2026-08-25T08:28:48.494Z"
+          "success": true,
+          "postId": "6a8d58b2ac911ff6309f04a0",
+          "publishedAt": "2026-08-25T08:56:21.124Z"
         }
       }
     }
