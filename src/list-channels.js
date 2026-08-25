@@ -110,7 +110,7 @@ async function main() {
         if (ch.service === "pinterest" && ch.metadata && ch.metadata.boards) {
           console.log("Boards:");
           ch.metadata.boards.forEach((board) => {
-            console.log(`  - ${board.name}  (id: ${board.id})`);
+            console.log(`  - ${board.name}  (serviceId: ${board.serviceId}, id: ${board.id})`);
           });
         }
 
