@@ -51,17 +51,17 @@
         "facebook": {
           "success": false,
           "lastError": "Invalid post: Image could not be read from its URL.",
-          "lastAttemptAt": "2026-09-12T16:29:19.580Z"
+          "lastAttemptAt": "2026-09-12T18:34:26.095Z"
         },
         "instagram": {
           "success": false,
-          "lastError": "Invalid post: Image could not be read from its URL.",
-          "lastAttemptAt": "2026-09-12T16:29:21.088Z"
+          "lastError": "[{\"message\":\"Unexpected response: \\\"<html>\\\\r\\\\n<head><title>502 Bad Gateway</title></head>\\\\r\\\\n<body>\\\\r\\\\n<center><h1>502 Bad Gateway</h1></center>\\\\r\\\\n</body>\\\\r\\\\n</html>\\\\r\\\\n\\\"\",\"path\":[\"createPost\"],\"extensions\":{\"request\":{\"method\":\"POST\",\"body\":\"{\\\"query\\\":\\\"mutation CreatePost($input:CreatePostInput!){__typename createPost(input:$input){__typename ...on PostActionSuccess{post{id text status}}...on NotFoundError{message}...on UnauthorizedError{message}...on UnexpectedError{message}...on RestProxyError{message}...on LimitReachedError{message}...on InvalidInputError{message}}}\\\",\\\"variables\\\":{\\\"input\\\":{\\\"assets\\\":[{\\\"image\\\":{\\\"url\\\":\\\"https://mcp-tools-z-image-turbo.hf.space/--replicas/n8mqw/gradio_api/file=/tmp/gradio/0a14ac25040b0ba632aaa3b2bb0fd955fc8f655eaaa3f1c9ea6a63f731ccecf9/image.webp\\\"}}],\\\"channelId\\\":\\\"6a89ca44ccaf649a67f6cc72\\\",\\\"metadata\\\":{\\\"instagram\\\":{\\\"shouldShareToFeed\\\":true,\\\"type\\\":\\\"post\\\"}},\\\"mode\\\":\\\"shareNow\\\",\\\"needsApproval\\\":false,\\\"saveToDraft\\\":false,\\\"schedulingType\\\":\\\"automatic\\\",\\\"text\\\":\\\"🔥 iPhone Call Forwarding: The Complete Guide to Redirecting Calls (2026)\\\\n\\\\niPhone Call Forwarding: The Complete Guide to Redirecting Calls (2026) Last Updated: July 25, 2026 | Reading Time: 13 minutes | by iOS Daily You are about to board a flight for a two-week vacation when a client calls. Your iPhone is staying home in airplane mode, but you cannot afford to miss that deal. The solution is simpler than packing two phones. By learning how to use call forwarding on iPhone , you can send every incoming cellular call to...\\\\n\\\\n———————————\\\\n\\\\n🔥 usambazaji wa Simu za iPhone: Mwongozo Kamili wa Kuelekeza Simu (2026)\\\\n\\\\nuwasilishaji wa Simu za iPhone: Mwongozo Kamili wa Kuelekeza Simu (2026) Ilisasishwa Mwisho: Julai 25, 2026 | Wakati wa Kusoma: dakika 13 | na iOS Daily Unakaribia kupanda ndege kwa likizo ya wiki mbili wakati mteja anapopiga simu. iPhone yako inakaa nyumbani katika hali ya ndege, lakini huwezi kukosa ofa hiyo. Suluhisho ni rahisi kuliko kufunga simu mbili. Kwa kujifunza jinsi ya kutumia usambazaji wa simu kwenye iPhone , unaweza kutuma kila simu ya mkononi inayoingia kwa...\\\\n\\\\n🔗 Link in bio / Link iko kwenye bio\\\\n\\\\n#WaiTech #Technology #TechNews #DigitalTips\\\"}},\\\"operationName\\\":\\\"CreatePost\\\"}\"},\"response\":{\"status\":502,\"statusText\":\"Bad Gateway\",\"body\":\"<html>\\r\\n<head><title>502 Bad Gateway</title></head>\\r\\n<body>\\r\\n<center><h1>502 Bad Gateway</h1></center>\\r\\n</body>\\r\\n</html>\\r\\n\"},\"code\":\"UPSTREAM_SERVER_ERROR\"}}]",
+          "lastAttemptAt": "2026-09-12T18:35:18.780Z"
         },
         "pinterest": {
           "success": false,
           "lastError": "Invalid post: Image could not be read from its URL.",
-          "lastAttemptAt": "2026-09-12T16:29:21.493Z"
+          "lastAttemptAt": "2026-09-12T18:35:19.240Z"
         }
       }
     }
