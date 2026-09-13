@@ -51,17 +51,17 @@
         "facebook": {
           "success": false,
           "lastError": "Invalid post: Image could not be read from its URL.",
-          "lastAttemptAt": "2026-09-13T00:16:04.060Z"
+          "lastAttemptAt": "2026-09-13T04:49:41.993Z"
         },
         "instagram": {
           "success": false,
           "lastError": "Invalid post: Image could not be read from its URL.",
-          "lastAttemptAt": "2026-09-13T00:16:05.436Z"
+          "lastAttemptAt": "2026-09-13T04:49:43.385Z"
         },
         "pinterest": {
           "success": false,
           "lastError": "Invalid post: Image could not be read from its URL.",
-          "lastAttemptAt": "2026-09-13T00:16:05.720Z"
+          "lastAttemptAt": "2026-09-13T04:49:43.738Z"
         }
       }
     }
