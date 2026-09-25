@@ -49,19 +49,19 @@
       "sourcePublishedAt": "Fri, 28 Aug 2026 13:02:10 +0000",
       "channels": {
         "facebook": {
-          "success": false,
-          "lastError": "Invalid post: Image could not be read from its URL.",
-          "lastAttemptAt": "2026-09-25T04:44:39.046Z"
+          "success": true,
+          "postId": "6ab64363db73444101e89496",
+          "publishedAt": "2026-09-25T09:48:26.583Z"
         },
         "instagram": {
-          "success": false,
-          "lastError": "Invalid post: Image could not be read from its URL.",
-          "lastAttemptAt": "2026-09-25T04:44:40.373Z"
+          "success": true,
+          "postId": "6ab6436c8c95968bb03436ff",
+          "publishedAt": "2026-09-25T09:48:37.725Z"
         },
         "pinterest": {
-          "success": false,
-          "lastError": "Invalid post: Image could not be read from its URL.",
-          "lastAttemptAt": "2026-09-25T04:44:40.620Z"
+          "success": true,
+          "postId": "6ab643754be5473030ad3be0",
+          "publishedAt": "2026-09-25T09:48:40.041Z"
         }
       }
     }
